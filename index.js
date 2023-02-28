@@ -120,48 +120,71 @@ function getRandomNum(min, max) {
   return Math.ceil(Math.random() * (max - min) + min);
 }
 
-const photos = new Array(25).fill(null).map((e, index) => {
-  return {
-    id: index + 1,
-    title: `Photo-${index + 1}`,
-    description: descriptions[getRandomNum(0, descriptions.length - 1)],
-    url: `https://picsum.photos/id/${index + 20}/600/600`,
-    likes: getRandomNum(25, 225),
-  };
-});
+// const photos = new Array(25).fill(null).map((e, index) => {
+//   return {
+//     description: descriptions[getRandomNum(0, descriptions.length - 1)],
+//     effects: {
+//       scale: 100,
+//       effect: "none",
+//     },
+//     hashtags: "",
+//     id: index + 1,
+//     likes: getRandomNum(25, 225),
+//     title: `Photo-${index + 1}`,
+//     url: `https://picsum.photos/id/${index + 20}/600/600`,
+//   };
+// });
 
-const comments = new Array(100).fill(null).map((e, index) => {
-  return {
-    id: index + 1,
-    avatar: `https://picsum.photos/id/${getRandomNum(100, 200)}/128/128`,
-    message: commentsArr[getRandomNum(0, commentsArr.length - 1)],
-    name: names[getRandomNum(0, names.length - 1)],
-  };
-});
+// const comments = new Array(100).fill(null).map((e, index) => {
+//   return {
+//     id: index + 1,
+//     avatar: `https://picsum.photos/id/${getRandomNum(100, 200)}/128/128`,
+//     message: commentsArr[getRandomNum(0, commentsArr.length - 1)],
+//     name: names[getRandomNum(0, names.length - 1)],
+//   };
+// });
 
-fs.writeFileSync("photos.txt", JSON.stringify(photos));
-fs.writeFileSync("comments.txt", JSON.stringify(comments));
+// fs.writeFileSync("photos.txt", JSON.stringify(photos));
+// fs.writeFileSync("comments.txt", JSON.stringify(comments));
 
 const server = http
   .createServer((req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "OPTIONS, GET");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, UPDATE");
     res.writeHead(200, { "Content-Type": "application/json" });
 
-    const url = req.url;
+    let body = "";
 
-    if (res.statusCode !== 200) {
-      res.write(`Error getting data. Status code: ${res.statusCode}`);
-      res.end();
-    } else {
-      if (url === "/photos") {
-        const photosData = fs.readFileSync("photos.txt");
-        res.write(photosData);
+    if (req.method == "POST") {
+      req.on("data", (data) => {
+        body += data.toString();
+      });
+
+      req.on("end", () => {
+        const formData = JSON.parse(body);
+        const photosUPD = JSON.parse(fs.readFileSync("photos.txt"));
+
+        photosUPD.push(formData);
+
+        fs.writeFileSync("photos.txt", JSON.stringify(photosUPD));
+
+        res.write(JSON.stringify(fs.readFileSync("photos.txt")));
         res.end();
-      } else if (url === "/comments") {
-        const commentsData = fs.readFileSync("comments.txt");
-        res.write(commentsData);
+      });
+    } else if ((req.method = "GET")) {
+      if (res.statusCode !== 200) {
+        res.write(`Error getting data. Status code: ${res.statusCode}`);
         res.end();
+      } else {
+        if (req.url === "/photos") {
+          const photosData = fs.readFileSync("photos.txt");
+          res.write(photosData);
+          res.end();
+        } else if (req.url === "/comments") {
+          const commentsData = fs.readFileSync("comments.txt");
+          res.write(commentsData);
+          res.end();
+        }
       }
     }
   })
